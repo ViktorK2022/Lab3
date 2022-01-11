@@ -12,3 +12,6 @@ ___
 Cсылка на развернутое приложение на платформе Heroku.
 
 https://cars2022.herokuapp.com/api/v1/cars
+
+
+![alt text](screenshot5.png "")​
