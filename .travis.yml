@@ -1,6 +1,28 @@
-dist: trusty # репозиторий внутри travis
+dist: trusty
 jdk: oraclejdk8
 language: java
 services:
   - postgresql
   - docker
+env:
+  global:
+    - secure: "UyoYqt1TG9U+OHF29fLKTND0fpTS9/0K4BBgGEsE5/Mq9s9xhij4ATQ9ADyEVANq8pNkZmNm4JU2fb21RrLQbAIIyaswBocUXKQCFACjcdu8SPchOMMGbiwerNyOVYLrnM8amq++jfJb4UISdf//iqd8OIgUwnQQnCbq3bhMujx6YkLk/mZP5Be7QXZ4GduROz5kRWNavXHBavKpUkFSO1P6zSsjz6y6OEmI02WG5Do7eCvlMkVDbs4ZG9C2ao9nAdOuVYxmA4Dz49HudY4TZnkEIqRQAKvl39KTmFM5A7F382fE9v2zVQoHXRqBlf237vDK0EV32fYxl90GZzE4X22SlO28hDdspAotqBNWNgFrPSWVPSY31onaJEkWWtsDj5xFJ4rdEn5HQlsSpfcDVNE64pFAQkTAmfWgIC/c0h/bQgUmV0pPRE2PoLczjOlhNBczaxvigHJtXVmMuBh0NdnyUOkQCMhrKm+QmWZ/F39b4itySFO3q11OZLucWMkuEm/BjMhrywai+FiziGsFGZNzepyw4M+EGVARoG0Luud35ta3wLKifAHoppauwd60F/6hXcmhlRCA+kQLh1mmpv4pqC/f5XrXqD3OtTUOdnksASRY9xBgTlkH6m2BpPDI2rioVISuyWjk0bwOZFcqWKYirTbBcQFVXHVKWUyiY8E="
+    - secure: "Ge/xhW7uaHVwIeU2ZwsIkOAkWmLlIDuX6WDhMPrKH0996CHudeJAcZMI34Rvb1cMDbmmmk5O6+aBnSAOhAOgUJ9MYE91ETtQ5enLE/sQRVaQy5To0W3ff8VG3gjjnkNZfjv/bKAhkiJDJhQa+RsNyBcnOTCcB115cZDNfhbq75K0EePZDbctypDv/YqzOTUcFF8dcP8A5/lq/cxPO6GhqSfIqiX228a2Qqx1f+ESx7a2aF8vkCljJ95Ohef8YA3Om0PS8ky5qIafFEPfhT0u/Et+vyx7OmHnaMSzN6rkoikYviQ5PrfI0u1DwVPWz4Vsnbke9ZQxIDooMfcw0AIvsz1xCznH+eytUkxGuhx8qni6M1xPtaBa9FCJ9qsEV1xkLNOi3QL7LVLjEiz8m99AJZpi66iJ8bTalM3K/p39MQ9WFpGPJZLFOsayRNaUoaGuxwjx+0VBx6BixiT+FOCDEth3Id9+7rsInjJSCVi28ivoQ8tR3qs8yqV++7HLNNm32Fn+03pRmkwpdoG1LI1akUHJ9eEkKbL/hanlZ5oETl8YyMADQlVZcIOcQYRm5FFC4WY1jByQ8egLF0MmMhxBpw63P82fl0KJT913PX6Aas7IvxyZdDngYneaMigulg5GwnmdPjknjNUpr+bHm/rYgvczV1UYRQVWyCLpmiEj8gU="
+    - secure: "fi83GI6rXXfURPQlLr0Cw24FvEEPWpQbnxNuYSUhb43l+Bkxpi6mP49IgpsyNxii9a1rQtG0XyrBDfkS40xXLkVc6HQeJtrq5FFkZdJ9SIpAZOUp/r1WPeFizLQxHAXnFfkq3rRYpUC+H5D+EkXEGVUoDoe4IvUlrEiAIMjr/C6rGfBimhrqKytkYs9Mnsj8kndhRNx7Du0NE0S2x/f2e++3pBhF4aCHqttBVpPUvU7I0k0fV5szJlqJ9bfnkhFr2f5VCVVd/Uq0FhHDBOM8LvshoDijIQ6LPjJrMwHlSQ3CAGBaDfdQZIbGeKtaCXhvGHqyvjHLCSq+9GskzuFBXtTHekeEG9NFyL31gsHaQEOajmpgVR3A4WSqqpzyPbirsCpEA6kI/kRNaBi99qwmcV3ufpZGymq1plT1OL1kPHILymB6PYzve+YD0QeYM/iQCcvv5cs6YSYtJ0qrAcTxtpYuMyCCK4xM+dpbgQtZvUq0L/MvSbO6Tm7TBRdPOTt01JXsXnAcT5NsMiVe8PgCNdclLUoI7zQlb638fH2OT+ZE8VEutXqBnXn+WD3ua/Hf7BYgxrmOl94uVymLYFehaX6tbO2NsnTp5KtVjdZ4UQLsHApiN0XNbTPKL6nIr5ROto1Ja01mpN4jry/FvAoQ8d6SJkXBhZTvVU3F0vkzfRo="
+    - COMMIT=${TRAVIS_COMMIT::7}
+
+script:
+  - ./mvnw clean install -B
+
+after_success:
+  - docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "$TRAVIS_BRANCH"; fi`
+  - export IMAGE_NAME=myapi/main-repo
+  - docker build -t $IMAGE_NAME:latest .
+  - docker tag $IMAGE_NAME:latest $IMAGE_NAME:$TAG
+  - docker push $IMAGE_NAME:$TAG
+
+deploy:
+  provider: heroku
+  api_key: $HEROKU_API_KEY
+  app: cars2022
